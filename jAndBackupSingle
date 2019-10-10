@@ -1,12 +1,21 @@
 #!/system/bin/sh
 #
 # 201900215
+# 20191005  add $User
 #
 # needs files jAndBackupPackage.Ignore and jAndBackup.Exclude
 
 # backup single package
 
+# $1  .... package to restore
+# $2  .... user to restore it for
+
 Verzeichnis=/sdcard/jBackup
+
+if [ "$2" == "" ]; then echo "User spec missing"; exit; fi
+Result=$(pm list packages --user $2)                                                                             
+if [ "$Result" == "" ]; then echo "No such user: $2"; fi
+
 
 if [ "$1" == "" ]; then echo "Package spec *name* "; exit; fi
 # format: /data/app/org.mozilla.firefox-sEyzX8YPNS21UfboL73Ntg== --> org.mozilla.firefox
@@ -17,11 +26,18 @@ read YesNo
 Answer=$(echo $YesNo | tr '[:lower:]' '[:upper:]')
 if [ "$Answer" != "Y" ]; then exit; fi
 
-TarName="$Verzeichnis/$Package-apk.tgz"
+echo "Saving $Package, $Package System and User data"
 
-echo "Saving to: $TarName"
+####### apk
+tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-apk.tgz \
+  /data/app/*$jPackage*/
 
-tar -X jAndBackup.Exclude -vczf $TarName \
-	/data/app/$Package*/ /data/data/$Package*/ \
-	/data/user/0/$Package*/ /data/user_de/0/$Package*/
+####### system data
+tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf - \
+  /data/data/*$jPackage*/ 2>>$LogFile | \
+  /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-System.tgg
 
+####### user data
+tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf - \
+  /data/user/$iUser/*$jPackage*/ /data/user_de/$iUser/*$jPackage*/ 2>>$LogFile | \
+  /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-User${UserID[iUser]}.

@@ -1,15 +1,10 @@
-#!/system/bin/ash
+#!/system/xbin/ash
 #
 # 20190205 /jps - restore jAndBackups
+# 20191005 /jps - 
 #
 
-#BackDir="/storage/C0DE-BA5E/Backups/jBackup/"
-
-BackDir=$1
-while [ "$BackDir" = "" ]; do
-  printf "BackDir [wo sind die decrypteten Backups]: "
-  read BackDir
-done
+BackDir="/sdcard/jBackup"
 
 # install the apks first
 for AppTar in $(find $BackDir -type f -iname "*-apk.tgz"); do
@@ -20,7 +15,25 @@ for AppTar in $(find $BackDir -type f -iname "*-apk.tgz"); do
     echo "Restoring $Package"
     tar -xzf $AppTar -C /
     # find errors when restored to /data/data - macht aber nix bis dato
-    find /data/app/*$Package*/ -name base.apk -exec pm install {} \;
+    # user 10 has to be installed manually
+    find /data/app/*$Package*/ -name base.apk -exec pm install --user 0 {} \;
+  fi
+done
+
+# restore system data
+User=0
+for AppTar in $(find $BackDir -type f -iname "*-System.tgz"); do
+  Package=$(echo $AppTar | sed -n 's/.*\/\(.*\)-System.tgz/\1/p')
+  if  [ "$Package" == "" ]; then             
+    echo "Error- unerwartetes Format $AppTar"
+  else                       
+    echo "Restoring $Package data for System"
+    tar -xzf $AppTar -C /                                    
+    # Uid is hex at beginning !?
+    PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
+         | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
+         | sed 's/_14/_e/g' | sed 's/_15/_f/g')
+    chown -R $PUid:$PUid /data/data/*$Package*
   fi
 done
 
@@ -31,12 +44,22 @@ for AppTar in $(find $BackDir -type f -iname "*-User*.tgz"); do
     echo "Error- unerwartetes Format $AppTar"
   else                       
     User=$(echo $AppTar | sed -n 's/.*-User\(.*\)\.tgz/\1/p')             
-    echo "Restoring $Package data for User $User"
-    tar -xzf $AppTar -C /                                    
-    # Uid is hex at beginning !?
-    PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
+    if [ $Package = "net.typeblog.shelter" ] && [ $User != 0 ]; then                                                                                                                                                               
+      echo "Will not restore data for $Package for $User"
+    else
+      echo "Restoring $Package data for User $User"
+      tar -xzf $AppTar -C /                                    
+      # Uid is hex at beginning !?
+      PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
          | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
          | sed 's/_14/_e/g' | sed 's/_15/_f/g')
-    chown -R $PUid:$PUid /data/user*/$User/*$Package*
+      chown -R $PUid:$PUid /data/user*/$User/*$Package*
+    fi
   fi
 done
+
+
+echo "Restore databases"
+sqlite3  /data/data/com.android.providers.userdictionary/databases/user_dict.db < \
+   /data/local/tmp/userdictionary.dmp
+

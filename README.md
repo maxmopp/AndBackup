@@ -9,3 +9,4 @@ Android backup and restore
 ```find ./ -type f -size +1c -name "*.tgg" -exec sh -c 'echo $1 && gpg --decrypt -o "${1%.tgg}.tgz" ${1}' _ {} \;```
 - restore all apks and decrypted data
 - restore only single apk with data for 1 user
+- set permissions

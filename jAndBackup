@@ -4,6 +4,7 @@
 # 20190220
 #	backup misc per User
 #	add incremental, only one copy
+# 20191005 error $iUser instead of ${UserID[iUser]}
 #
 # needs files jAndBackupPackage.Ignore and jAndBackup.Exclude
 #
@@ -35,7 +36,7 @@ let UserCount=${#UserID[*]}-1
 
 # 
 
-for iUser in `seq 0 $UserCount`; do
+for iUser in `seq 1 $UserCount`; do
    echo "\n\nBacking up packages for User ${UserID[iUser]}\n"
    for Package in $(cmd package list packages --user  ${UserID[iUser]}); do
      jPackage=${Package/package:/} 
@@ -65,23 +66,23 @@ for iUser in `seq 0 $UserCount`; do
        ####### user data
        if [ ! -f $BackupDir/$jPackage-User${UserID[iUser]}.tgg ]; then touch -t 197101010101 $BackupDir/$jPackage-User${UserID[iUser]}.tgg; fi
        let TimeDiff=`date '+%s'`-`stat -c %Y $BackupDir/$jPackage-User${UserID[iUser]}.tgg`
-       Result=$(find /data/user/$iUser/*$jPackage*/ /data/user_de/$iUser/*$jPackage*/ -type f -mtime -${TimeDiff}s | grep -E -iv 'cache|thumbnail')
+       Result=$(find /data/user/${UserID[iUser]}/*$jPackage*/ /data/user_de/${UserID[iUser]}/*$jPackage*/ -type f -mtime -${TimeDiff}s | grep -E -iv 'cache|thumbnail')
        if [ "$Result" != "" ] || [ "$SaveSet" == "F" ]; then
          if [ $Debug -eq 1 ]; then echo "============ Backing up Data User${UserID[iUser]} for $jPackage"; fi
          tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf - \
-              /data/user/$iUser/*$jPackage*/ /data/user_de/$iUser/*$jPackage*/ 2>>$LogFile | \
+              /data/user/${UserID[iUser]}/*$jPackage*/ /data/user_de/${UserID[iUser]}/*$jPackage*/ 2>>$LogFile | \
               /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-User${UserID[iUser]}.tgg
        fi
      fi
    done
    echo "\n\n"
-   if [ -f /data/system/users/$iUser/accounts.db ]; then
-     sqlite3 /data/system/users/$iUser/accounts.db < /data/jpchil/jAndBackup/jAndAccounts.sql
+   if [ -f /data/system/users/${UserID[iUser]}/accounts.db ]; then
+     sqlite3 /data/system/users/${UserID[iUser]}/accounts.db < /data/jpchil/jAndBackup/jAndAccounts.sql
    fi
    sqlite3 /data/data/com.android.providers.userdictionary/databases/user_dict.db < /data/jpchil/jAndBackup/jAndUserdict.sql
    tar -czf - /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp \
-          /data/system_de/$iUser/accounts_de.db  /data/system_ce/$iUser/accounts_ce.db \
+          /data/system_de/${UserID[iUser]}/accounts_de.db  /data/system_ce/${UserID[iUser]}/accounts_ce.db \
           /data/system/sync/accounts.xml /data/misc/bluedroid /data/misc/wifi \
-          /data/misc_ce/$iUser/wifi 2>>$LogFile | /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/misc-User$iUser.tgg
+          /data/misc_ce/${UserID[iUser]}/wifi 2>>$LogFile | /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/misc-User${UserID[iUser]}.tgg
    rm /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp
 done

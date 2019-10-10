@@ -1,0 +1,47 @@
+#!/system/bin/sh
+#
+# 201900215
+#
+# needs files jAndBackupPackage.Ignore and jAndBackup.Exclude
+
+# accounts, bluetooth, wifi access points
+# was fehlt: data usage policy, wallpaper
+
+BackupDir=/sdcard/jBackup
+mkdir $BackupDir
+LogFile=/sdcard/jBackup.log
+echo $(date +%Y%m%d) > $LogFile
+
+# get UserIDs
+UserID=($(pm list users | sed -n 's/.*{\([^:]*\):.*/\1/p'))
+let UserCount=${#UserID[*]}-1
+
+# Fehler: data/app einmal, dann erst fur alle user data/users
+
+for iUser in `seq 0 $UserCount`; do
+   echo "\n\nBacking up packages for User ${UserID[iUser]}\n"
+   for Package in $(cmd package list packages --user  ${UserID[iUser]}); do
+     jPackage=${Package/package:/} 
+     echo $jPackage | tee -a $LogFile
+     if [[ $(grep $jPackage /data/jpchil/jAndBackup/jAndBackupPackage.Ignore) ]]; then
+       echo "- Skipping package $jPackage" | tee -a $LogFile
+     else
+       if [ ! -f $BackupDir/$jPackage.tgz ]; then 
+         tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-apk.tgz \
+            /data/app/*$jPackage*/ /data/data/*$jPackage*/ 2>>$LogFile
+       fi
+       tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-User${UserID[iUser]}.tgz \
+            /data/user/$iUser/*$jPackage*/ /data/user_de/$iUser/*$jPackage*/  2>>$LogFile
+     fi
+   done
+   echo "\n\n"
+   sqlite3 /data/system/users/0/accounts.db < /data/jpchil/jAndBackup/jAndAccounts.sql
+   sqlite3 /data/data/com.android.providers.userdictionary/databases/user_dict.db < /data/jpchil/jAndBackup/jAndUserdict.sql
+   tar -czf $BackupDir/misc.tgz /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp \
+          /data/system_de/0/accounts_de.db /data/system_de/10/accounts_de.db \
+          /data/system_ce/0/accounts_ce.db /data/system_ce/10/accounts_ce.db \
+          /data/system/sync/accounts.xml /data/misc/bluedroid /data/misc/wifi \
+          /data/misc_ce/0/wifi
+   rm /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp
+done
+

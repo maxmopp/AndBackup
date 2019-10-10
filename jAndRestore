@@ -1,12 +1,30 @@
-#!/system/xbin/ash
+#!/system/bin/ash
 #
 # 20190205 /jps - restore jAndBackups
-# 20191005 /jps - install apk for user who needs it and not all
 #
 
-BackDir="/sdcard/jBackup/"
+#BackDir="/storage/C0DE-BA5E/Backups/jBackup/"
 
-# restore user data and apk for user
+BackDir=$1
+while [ "$BackDir" = "" ]; do
+  printf "BackDir [wo sind die decrypteten Backups]: "
+  read BackDir
+done
+
+# install the apks first
+for AppTar in $(find $BackDir -type f -iname "*-apk.tgz"); do
+  Package=$(echo $AppTar | sed -n 's/.*\/\(.*\)-apk.*.tgz/\1/p')
+  if  [ "$Package" == "" ]; then
+    echo "Error- unerwartetes Format $AppTar"
+  else
+    echo "Restoring $Package"
+    tar -xzf $AppTar -C /
+    # find errors when restored to /data/data - macht aber nix bis dato
+    find /data/app/*$Package*/ -name base.apk -exec pm install {} \;
+  fi
+done
+
+# restore user data
 for AppTar in $(find $BackDir -type f -iname "*-User*.tgz"); do
   Package=$(echo $AppTar | sed -n 's/.*\/\(.*\)-User.*.tgz/\1/p')
   if  [ "$Package" == "" ]; then             
@@ -15,22 +33,10 @@ for AppTar in $(find $BackDir -type f -iname "*-User*.tgz"); do
     User=$(echo $AppTar | sed -n 's/.*-User\(.*\)\.tgz/\1/p')             
     echo "Restoring $Package data for User $User"
     tar -xzf $AppTar -C /                                    
-    PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' | sed 's/1.0/a/g')
+    # Uid is hex at beginning !?
+    PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
+         | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
+         | sed 's/_14/_e/g' | sed 's/_15/_f/g')
     chown -R $PUid:$PUid /data/user*/$User/*$Package*
-    ApkTar=$BackDir$Package-apk.tgz
-    if [ ! -e $ApkTar ]; then 
-      echo "Error - no $ApkTar found"
-    else
-      if [ $Package = "net.typeblog.shelter" ] && [ $User != 0 ]; then                                                                                                                                                               
-        echo "Will not install apk for $Package for $User"
-      else
-        echo "Restoring apk for $Package and user $User"
-        tar -xzf $ApkTar -C /
-        # only one version of the same packagename - I dont know better
-        InstallApk=$(find /data/app/*$Package*/ -name base.apk | tail -1)
-        pm install --user $User $InstallApk
-      fi
-    fi
   fi
-
 done

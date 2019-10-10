@@ -1,14 +1,28 @@
 #!/system/bin/sh
 #
 # 201900215
+# 20190220
+#	backup misc per User
+#	add incremental, only one copy
 #
 # needs files jAndBackupPackage.Ignore and jAndBackup.Exclude
+#
+#   SaveSet
+#     F Full backup 
+#     I Invremental based on differenz ctime of last backup and mtime of data files
 
 # accounts, bluetooth, wifi access points
 # was fehlt: data usage policy, wallpaper
 
+Debug=1
+
+SaveSet=$1
+
+if [ "$SaveSet" != "F" ] && [ "$SaveSet" != "I" ]; then echo "Parameter Full or incremental: [F|I]" && exit; fi
+
+
 BackupDir=/sdcard/jBackup
-mkdir $BackupDir
+if [ ! -d $BackupDir ]; then mkdir $BackupDir; fi
 LogFile=/sdcard/jBackup.log
 echo $(date +%Y%m%d) > $LogFile
 
@@ -16,32 +30,51 @@ echo $(date +%Y%m%d) > $LogFile
 UserID=($(pm list users | sed -n 's/.*{\([^:]*\):.*/\1/p'))
 let UserCount=${#UserID[*]}-1
 
-# Fehler: data/app einmal, dann erst fur alle user data/users
+# 
 
 for iUser in `seq 0 $UserCount`; do
    echo "\n\nBacking up packages for User ${UserID[iUser]}\n"
    for Package in $(cmd package list packages --user  ${UserID[iUser]}); do
      jPackage=${Package/package:/} 
-     echo $jPackage | tee -a $LogFile
+     echo $jPackage | tee -a  $LogFile
      if [[ $(grep $jPackage /data/jpchil/jAndBackup/jAndBackupPackage.Ignore) ]]; then
        echo "- Skipping package $jPackage" | tee -a $LogFile
      else
-       if [ ! -f $BackupDir/$jPackage.tgz ]; then 
+       ####### apk
+       if [ ! -f $BackupDir/$jPackage-apk.tgz ]; then touch -t 197101010101 $BackupDir/$jPackage-apk.tgz; fi
+       let TimeDiff=`date '+%s'`-`stat -c %Y $BackupDir/$jPackage-apk.tgz`
+       Result=$(find /data/app/*$jPackage*/ -type f -mtime -${TimeDiff}s | grep -E -v 'vdex|art')
+       if [ "$Result" != "" ] || [ "$SaveSet" == "F" ]; then
+         if [ $Debug -eq 1 ]; then echo "============ Backing up apk for $jPackage"; fi
          tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-apk.tgz \
-            /data/app/*$jPackage*/ /data/data/*$jPackage*/ 2>>$LogFile
+                /data/app/*$jPackage*/ 2>>$LogFile
        fi
-       tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-User${UserID[iUser]}.tgz \
-            /data/user/$iUser/*$jPackage*/ /data/user_de/$iUser/*$jPackage*/  2>>$LogFile
+       ####### system data
+      if [ ! -f $BackupDir/$jPackage-System.tgz ]; then touch -t 197101010101 $BackupDir/$jPackage-System.tgz; fi
+       let TimeDiff=`date '+%s'`-`stat -c %Y $BackupDir/$jPackage-System.tgz`
+       Result=$(find /data/data/*$jPackage*/ -type f -mtime -${TimeDiff}s | grep -E -iv 'cache|thumbnail')
+       if [ "$Result" != "" ] || [ "$SaveSet" == "F" ]; then
+         if [ $Debug -eq 1 ]; then echo "============ Backing up system data  for $jPackage"; fi
+         tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-System.tgz \
+                /data/data/*$jPackage*/ 2>>$LogFile
+       fi
+       ####### user data
+       if [ ! -f $BackupDir/$jPackage-User${UserID[iUser]}.tgz ]; then touch -t 197101010101 $BackupDir/$jPackage-User${UserID[iUser]}.tgz; fi
+       let TimeDiff=`date '+%s'`-`stat -c %Y $BackupDir/$jPackage-User${UserID[iUser]}.tgz`
+       Result=$(find /data/user/$iUser/*$jPackage*/ /data/user_de/$iUser/*$jPackage*/ -type f -mtime -${TimeDiff}s | grep -E -iv 'cache|thumbnail')
+       if [ "$Result" != "" ] || [ "$SaveSet" == "F" ]; then
+         if [ $Debug -eq 1 ]; then echo "============ Backing up Data User${UserID[iUser]} for $jPackage"; fi
+         tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-User${UserID[iUser]}.tgz \
+              /data/user/$iUser/*$jPackage*/ /data/user_de/$iUser/*$jPackage*/  2>>$LogFile
+       fi
      fi
    done
    echo "\n\n"
-   sqlite3 /data/system/users/0/accounts.db < /data/jpchil/jAndBackup/jAndAccounts.sql
+   sqlite3 /data/system/users/$iUser/accounts.db < /data/jpchil/jAndBackup/jAndAccounts.sql
    sqlite3 /data/data/com.android.providers.userdictionary/databases/user_dict.db < /data/jpchil/jAndBackup/jAndUserdict.sql
-   tar -czf $BackupDir/misc.tgz /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp \
-          /data/system_de/0/accounts_de.db /data/system_de/10/accounts_de.db \
-          /data/system_ce/0/accounts_ce.db /data/system_ce/10/accounts_ce.db \
+   tar -czf $BackupDir/misc-User$iUser.tgz /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp \
+          /data/system_de/$iUser/accounts_de.db  /data/system_ce/$iUser/accounts_ce.db \
           /data/system/sync/accounts.xml /data/misc/bluedroid /data/misc/wifi \
-          /data/misc_ce/0/wifi
+          /data/misc_ce/$iUser/wifi
    rm /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp
 done
-

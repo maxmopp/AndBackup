@@ -1,0 +1,27 @@
+#!/system/bin/sh
+#
+# 201900215
+#
+# needs files jAndBackupPackage.Ignore and jAndBackup.Exclude
+
+# backup single package
+
+Verzeichnis=/sdcard/jBackup
+
+if [ "$1" == "" ]; then echo "Package spec *name* "; exit; fi
+# format: /data/app/org.mozilla.firefox-sEyzX8YPNS21UfboL73Ntg== --> org.mozilla.firefox
+Package=$(find /data/app/ -type d -iname "*$1*"  | tail -1 | sed 's/.*\/\(.*\).\{25\}/\1/')
+if [ "$Package" == "" ]; then echo "Package $Package not found"; exit; fi
+printf "Backup $Package (Y/N)"
+read YesNo
+Answer=$(echo $YesNo | tr '[:lower:]' '[:upper:]')
+if [ "$Answer" != "Y" ]; then exit; fi
+
+TarName="$Verzeichnis/$Package-apk.tgz"
+
+echo "Saving to: $TarName"
+
+tar -X jAndBackup.Exclude -vczf $TarName \
+	/data/app/$Package*/ /data/data/$Package*/ \
+	/data/user/0/$Package*/ /data/user_de/0/$Package*/
+

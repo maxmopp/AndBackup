@@ -1,0 +1,38 @@
+#!/system/xbin/ash
+#
+# 20190205 /jps - restore jAndBackups
+# 20191005  add $User
+#
+
+# $1  .... package to restore
+# $2  .... user to restore it for
+
+BackDir="/sdcard/jBackup"
+
+if [ "$1" == "" ]; then echo "Package spec *name* "; exit; fi
+
+if [ "$2" == "" ]; then echo "User spec missing"; exit; fi
+Result=$(pm list packages --user $2)                                                                             
+if [ "$Result" == "" ]; then echo "No such user: $2"; fi
+User=$2
+
+ApkTar=$(find $BackDir/*$1*apk.tgz | tail -1)
+Package=$(echo $ApkTar | sed 's/.*\/\(.*\)-apk.tgz/\1/')
+if [ "$Package" == "" ]; then echo "Package $Package not found"; exit; fi
+printf "Restore $ApkTar (Y/N)"
+read YesNo
+Answer=$(echo $YesNo | tr '[:lower:]' '[:upper:]')
+if [ "$Answer" != "Y" ]; then exit; fi
+                                      
+# restore apk                         
+tar -vxzpf $ApkTar -C /               
+find /data/app/$Package*/ -name base.apk -exec pm install {} \;
+                                                               
+# restore data  
+printf "Restore $Package data for User $User (Y/N)"
+read YesNo
+Answer=$(echo $YesNo | tr '[:lower:]' '[:upper:]')
+if [ "$Answer" != "Y" ]; then exit; fi                                     
+find $BackDir/$Package*User$User.tgz -exec tar -vxzpf {} -C / \;   
+PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print $3 }')
+chown -R $PUid:$PUid /data/user*/*/$Package

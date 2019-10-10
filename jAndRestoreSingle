@@ -3,11 +3,16 @@
 # 20190205 /jps - restore jAndBackups
 # 20191005  add $User
 #
+# How:
+# pm list packages | grep car2 | awk -F\: '{ print "./jAndRestoreSingle " $2 " 0 Y" }' | ash
 
 # $1  .... package to restore
 # $2  .... user to restore it for
+# $3  .... YN to all questions
 
-BackDir="/sdcard/jBackup"
+AutoA=$(echo $3 | tr '[:lower:]' '[:upper:]')
+
+BackDir="/sdcard/tgz"
 
 if [ "$1" == "" ]; then echo "Package spec *name* "; exit; fi
 
@@ -19,9 +24,13 @@ User=$2
 ApkTar=$(find $BackDir/*$1*apk.tgz | tail -1)
 Package=$(echo $ApkTar | sed 's/.*\/\(.*\)-apk.tgz/\1/')
 if [ "$Package" == "" ]; then echo "Package $Package not found"; exit; fi
-printf "Restore $ApkTar (Y/N)"
-read YesNo
-Answer=$(echo $YesNo | tr '[:lower:]' '[:upper:]')
+if [ "$AutoA" = "" ]; then
+  printf "Restore $ApkTar (Y/N)"
+  read YesNo
+  Answer=$(echo $YesNo | tr '[:lower:]' '[:upper:]')
+else
+  Answer=$AutoA
+fi
 if [ "$Answer" = "Y" ]; then 
   # restore apk                         
   tar -vxzpf $ApkTar -C /               
@@ -29,10 +38,15 @@ if [ "$Answer" = "Y" ]; then
 fi
                                                                
 # restore data  
-printf "Restore $Package data for User $User (Y/N)"
-read YesNo
-Answer=$(echo $YesNo | tr '[:lower:]' '[:upper:]')
+if [ "$AutoA" = "" ]; then
+  printf "Restore $Package data for User $User (Y/N)"
+  read YesNo
+  Answer=$(echo $YesNo | tr '[:lower:]' '[:upper:]')
+else
+  Answer=$AutoA                                                     
+fi
 if [ "$Answer" != "Y" ]; then exit; fi                                     
 find $BackDir/$Package*User$User.tgz -exec tar -vxzpf {} -C / \;   
 PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print $3 }')
 chown -R $PUid:$PUid /data/user*/*/$Package
+

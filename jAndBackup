@@ -25,9 +25,9 @@ SaveSet=$1
 if [ "$SaveSet" != "F" ] && [ "$SaveSet" != "I" ]; then echo "Parameter Full or incremental: [F|I]" && exit; fi
 
 
-BackupDir=/sdcard/jBackup
+BackupDir=/sdcard/jAndBackup
 if [ ! -d $BackupDir ]; then mkdir $BackupDir; fi
-LogFile=/sdcard/jBackup.log
+LogFile=/sdcard/jAndBackup.log
 echo $(date +%Y%m%d) > $LogFile
 
 # get UserIDs
@@ -36,7 +36,7 @@ let UserCount=${#UserID[*]}-1
 
 # 
 
-for iUser in `seq 1 $UserCount`; do
+for iUser in `seq 0 $UserCount`; do
    echo "\n\nBacking up packages for User ${UserID[iUser]}\n"
    for Package in $(cmd package list packages --user  ${UserID[iUser]}); do
      jPackage=${Package/package:/} 

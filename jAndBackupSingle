@@ -10,7 +10,7 @@
 # $1  .... package to restore
 # $2  .... user to restore it for
 
-Verzeichnis=/sdcard/jBackup
+Verzeichnis=/sdcard/jAndBackup
 
 if [ "$2" == "" ]; then echo "User spec missing"; exit; fi
 Result=$(pm list packages --user $2)                                                                             

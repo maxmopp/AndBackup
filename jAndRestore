@@ -4,7 +4,7 @@
 # 20191005 /jps - 
 #
 
-BackDir="/sdcard/jBackup"
+BackDir="/sdcard/jAndBackup"
 
 # install the apks first
 for AppTar in $(find $BackDir -type f -iname "*-apk.tgz"); do
@@ -60,6 +60,16 @@ done
 
 
 echo "Restore databases"
+Owner=$(stat -c "%U:%G" /data/data/com.android.providers.userdictionary)
+if [ ! -e /data/data/com.android.providers.userdictionary/databases/ ]; then 
+  mkdir -p /data/data/com.android.providers.userdictionary/databases/
+  chmod 775 /data/data/com.android.providers.userdictionary/databases
+  chown $Owner /data/data/com.android.providers.userdictionary/databases
+fi
+if [ ! -e /data/data/com.android.providers.userdictionary/databases/user_dict.db ]; then
+  touch /data/data/com.android.providers.userdictionary/databases/user_dict.db
+  chown $Owner /data/data/com.android.providers.userdictionary/databases/user_dict.db
+fi
 sqlite3  /data/data/com.android.providers.userdictionary/databases/user_dict.db < \
    /data/local/tmp/userdictionary.dmp
 

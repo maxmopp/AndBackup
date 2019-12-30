@@ -12,7 +12,7 @@
 
 AutoA=$(echo $3 | tr '[:lower:]' '[:upper:]')
 
-BackDir="/sdcard/tgz"
+BackDir="/sdcard/jAndBackup"
 
 if [ "$1" == "" ]; then echo "Package spec *name* "; exit; fi
 

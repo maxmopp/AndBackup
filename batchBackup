@@ -1,4 +1,4 @@
 #!/system/bin/sh
-if [ ! -e /data/jpchil/batchBackup ]; then mkdir /data/jpchil/batchBackup; fi
-/data/jpchil/jAndBackup/jAndBackup I > /data/jpchil/log/jAndBackup.log 2>&1
-find /sdcard/jBackup/ -mtime -1 | wc -l > /sdcard/log/jAndBackup.count
+if [ ! -e /sdcard/jAndBackup ]; then mkdir /sdcard/jAndBackup; fi
+/data/jpchil/jAndBackup/jAndBackup I > /sdcard/log/jAndBackup.log 2>&1
+find /sdcard/jAndBackup/ -mtime -1 | wc -l > /sdcard/log/jAndBackup.count

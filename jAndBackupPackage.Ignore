@@ -126,3 +126,5 @@ com.qualcomm.qti.telephonyservice
 com.qualcomm.timeservice
 com.qualcomm.wfd.service
 com.android.onetimeinitializer
+org.microg.gms.droidguard
+

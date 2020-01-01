@@ -47,6 +47,8 @@ else
 fi
 if [ "$Answer" != "Y" ]; then exit; fi                                     
 find $BackDir/$Package*User$User.tgz -exec tar -vxzpf {} -C / \;   
-PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print $3 }')
+PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
+  | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
+  | sed 's/_14/_e/g' | sed 's/_15/_f/g')
 chown -R $PUid:$PUid /data/user*/*/$Package
 

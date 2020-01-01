@@ -27,7 +27,7 @@ if [ "$SaveSet" != "F" ] && [ "$SaveSet" != "I" ]; then echo "Parameter Full or 
 
 BackupDir=/sdcard/jAndBackup
 if [ ! -d $BackupDir ]; then mkdir $BackupDir; fi
-LogFile=/sdcard/jAndBackup.log
+LogFile=/data/jpchil/log/jAndBackup.log 
 echo $(date +%Y%m%d) > $LogFile
 
 # get UserIDs
@@ -79,6 +79,7 @@ for iUser in `seq 0 $UserCount`; do
    if [ -f /data/system/users/${UserID[iUser]}/accounts.db ]; then
      sqlite3 /data/system/users/${UserID[iUser]}/accounts.db < /data/jpchil/jAndBackup/jAndAccounts.sql
    fi
+   # Jetzt automatisch wg. /data/user/0/com.android.providers.userdictionary/databases/user_dict.db
    sqlite3 /data/data/com.android.providers.userdictionary/databases/user_dict.db < /data/jpchil/jAndBackup/jAndUserdict.sql
    tar -czf - /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp \
           /data/system_de/${UserID[iUser]}/accounts_de.db  /data/system_ce/${UserID[iUser]}/accounts_ce.db \

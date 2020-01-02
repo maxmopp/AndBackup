@@ -6,9 +6,7 @@ package:com.google.android.ext.shared
 package:com.google.android.configupdater
 package:com.google.android.CameraRedmi5Plus
 package:com.google.android.GoogleCamera
-package:com.google.zxing.client.android
 package:com.google.android.setupwizard
-package:com.google.android.stardroid
 package:com.google.android.packageinstaller
 package:com.google.android.gms
 package:com.google.android.gsf
@@ -127,4 +125,3 @@ com.qualcomm.timeservice
 com.qualcomm.wfd.service
 com.android.onetimeinitializer
 org.microg.gms.droidguard
-

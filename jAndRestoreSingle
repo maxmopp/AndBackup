@@ -8,11 +8,10 @@
 
 # $1  .... package to restore
 # $2  .... user to restore it for
-# $3  .... YN to all questions
+# $3  .... tgz Directory
+# $4  .... YN to all questions
 
-AutoA=$(echo $3 | tr '[:lower:]' '[:upper:]')
-
-BackDir="/sdcard/jAndBackup"
+AutoA=$(echo $4 | tr '[:lower:]' '[:upper:]')
 
 if [ "$1" == "" ]; then echo "Package spec *name* "; exit; fi
 
@@ -20,6 +19,10 @@ if [ "$2" == "" ]; then echo "User spec missing"; exit; fi
 Result=$(pm list packages --user $2)                                                                             
 if [ "$Result" == "" ]; then echo "No such user: $2"; fi
 User=$2
+
+BackDir="/sdcard/jAndBackup"
+if [ "$3" != "" ]; then BackDir=$3; fi
+echo "Source: $BackDir"
 
 ApkTar=$(find $BackDir/*$1*apk.tgz | tail -1)
 Package=$(echo $ApkTar | sed 's/.*\/\(.*\)-apk.tgz/\1/')

@@ -35,9 +35,9 @@ tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-apk.
 ####### system data
 tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf - \
   /data/data/*$jPackage*/ 2>>$LogFile | \
-  /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-System.tgg
+  /system/xbin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-System.tgg
 
 ####### user data
 tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf - \
   /data/user/$iUser/*$jPackage*/ /data/user_de/$iUser/*$jPackage*/ 2>>$LogFile | \
-  /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-User${UserID[iUser]}.
+  /system/xbin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-User${UserID[iUser]}.

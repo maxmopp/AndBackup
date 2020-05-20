@@ -47,7 +47,7 @@ for iUser in `seq 0 $UserCount`; do
        ####### apk
        if [ ! -f $BackupDir/$jPackage-apk.tgz ]; then touch -t 197101010101 $BackupDir/$jPackage-apk.tgz; fi
        let TimeDiff=`date '+%s'`-`stat -c %Y $BackupDir/$jPackage-apk.tgz`
-       Result=$(find /data/app/*$jPackage*/ -type f -mtime -${TimeDiff}s | grep -E -v 'vdex|art')
+       Result=$(find /data/app/*$jPackage*/ -type f -mtime -${TimeDiff}s | grep -E -v '\.vdex$|\.art$')
        if [ "$Result" != "" ] || [ "$SaveSet" == "F" ]; then
          if [ $Debug -eq 1 ]; then echo "============ Backing up apk for $jPackage"; fi
          tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-apk.tgz \
@@ -61,7 +61,7 @@ for iUser in `seq 0 $UserCount`; do
          if [ $Debug -eq 1 ]; then echo "============ Backing up system data  for $jPackage"; fi
          tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf - \
                 /data/data/*$jPackage*/ 2>>$LogFile | \
-                /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-System.tgg
+                /system/xbin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-System.tgg
        fi
        ####### user data
        if [ ! -f $BackupDir/$jPackage-User${UserID[iUser]}.tgg ]; then touch -t 197101010101 $BackupDir/$jPackage-User${UserID[iUser]}.tgg; fi
@@ -71,7 +71,7 @@ for iUser in `seq 0 $UserCount`; do
          if [ $Debug -eq 1 ]; then echo "============ Backing up Data User${UserID[iUser]} for $jPackage"; fi
          tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf - \
               /data/user/${UserID[iUser]}/*$jPackage*/ /data/user_de/${UserID[iUser]}/*$jPackage*/ 2>>$LogFile | \
-              /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-User${UserID[iUser]}.tgg
+              /system/xbin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/$jPackage-User${UserID[iUser]}.tgg
        fi
      fi
    done
@@ -84,6 +84,6 @@ for iUser in `seq 0 $UserCount`; do
    tar -czf - /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp \
           /data/system_de/${UserID[iUser]}/accounts_de.db  /data/system_ce/${UserID[iUser]}/accounts_ce.db \
           /data/system/sync/accounts.xml /data/misc/bluedroid /data/misc/wifi \
-          /data/misc_ce/${UserID[iUser]}/wifi 2>>$LogFile | /data/jpchil/bin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/misc-User${UserID[iUser]}.tgg
+          /data/misc_ce/${UserID[iUser]}/wifi 2>>$LogFile | /system/xbin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/misc-User${UserID[iUser]}.tgg
    rm /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp
 done

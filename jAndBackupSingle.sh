@@ -10,6 +10,8 @@
 # $1  .... package to restore
 # $2  .... user to restore it for
 
+PATH=/system/xbin:$PATH
+
 # export LD_LIBRARY_PATH=/vendor/lib*:/system/lib*:/data/jpchil/lib
 export HOME=/data/jpchil/
 

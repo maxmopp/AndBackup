@@ -3,16 +3,21 @@
 # 20190205 /jps - restore jAndBackups
 # 20191005  add $User
 # 20200627 for A10 apks have to be installed for users other than 0 explicitly (pm --user 10)
+# 20201228 A11 has new random subdir, restoring to tmp + pm install, new PUid
 #
 # How:
 # pm list packages | grep car2 | awk -F\: '{ print "./jAndRestoreSingle " $2 " 0 Y" }' | ash
-
-# ACHTUNG: this down not work if jumping package install - very bad ownership messup
 
 # $1  .... package to restore
 # $2  .... user to restore it for
 # $3  .... tgz Directory
 # $4  .... YN to all questions
+
+PATH=/system/xbin:$PATH
+alias find=/system/bin/find
+alias tar=/system/xbin/tar
+
+TempDir=/data/local/tmp
 
 AutoA=$(echo $4 | tr '[:lower:]' '[:upper:]')
 
@@ -39,8 +44,8 @@ else
 fi
 if [ "$Answer" = "Y" ]; then 
   # restore apk                         
-  tar -vxzpf $ApkTar -C /               
-  find /data/app/$Package*/ -name base.apk -exec pm install --user $User -r {} \;
+  tar -vxzpf $ApkTar -C $TempDir
+  pm install --user $User -r $TempDir/base.apk
 fi
                                                                
 # restore data  
@@ -53,7 +58,9 @@ else
 fi
 if [ "$Answer" != "Y" ]; then exit; fi                                     
 find $BackDir/$Package*User$User.tgz -exec tar -vxzpf {} -C / \;   
-PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
-  | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
-  | sed 's/_14/_e/g' | sed 's/_15/_f/g')
+PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print $3 }')
+#PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
+#  | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
+#  | sed 's/_14/_e/g' | sed 's/_15/_f/g')
 chown -R $PUid:$PUid /data/user*/*/$Package
+

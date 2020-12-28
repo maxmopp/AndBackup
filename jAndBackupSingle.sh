@@ -10,6 +10,9 @@
 # $1  .... package to restore
 # $2  .... user to restore it for
 
+# export LD_LIBRARY_PATH=/vendor/lib*:/system/lib*:/data/jpchil/lib
+export HOME=/data/jpchil/
+
 Verzeichnis=/sdcard/jAndBackup
 
 if [ "$2" == "" ]; then echo "User spec missing"; exit; fi

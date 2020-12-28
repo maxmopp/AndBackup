@@ -28,7 +28,7 @@ if [ "$SaveSet" != "F" ] && [ "$SaveSet" != "I" ]; then echo "Parameter Full or 
 BackupDir=/sdcard/jAndBackup
 if [ ! -d $BackupDir ]; then mkdir $BackupDir; fi
 LogFile=/data/jpchil/log/jAndBackup.log 
-echo $(date +%Y%m%d) > $LogFile
+echo "`date +%Y%m%d-%H%M` - batchBackup started" > $LogFile
 
 # get UserIDs
 UserID=($(pm list users | sed -n 's/.*{\([^:]*\):.*/\1/p'))
@@ -87,3 +87,5 @@ for iUser in `seq 0 $UserCount`; do
           /data/misc_ce/${UserID[iUser]}/wifi 2>>$LogFile | /system/xbin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/misc-User${UserID[iUser]}.tgg
    rm /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp
 done
+
+echo "`date +%Y%m%d-%H%M` - batchBackup finished" >> $LogFile

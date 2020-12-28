@@ -2,9 +2,12 @@
 #
 # 20190205 /jps - restore jAndBackups
 # 20191005  add $User
+# 20200627 for A10 apks have to be installed for users other than 0 explicitly (pm --user 10)
 #
 # How:
 # pm list packages | grep car2 | awk -F\: '{ print "./jAndRestoreSingle " $2 " 0 Y" }' | ash
+
+# ACHTUNG: this down not work if jumping package install - very bad ownership messup
 
 # $1  .... package to restore
 # $2  .... user to restore it for
@@ -28,7 +31,7 @@ ApkTar=$(find $BackDir/*$1*apk.tgz | tail -1)
 Package=$(echo $ApkTar | sed 's/.*\/\(.*\)-apk.tgz/\1/')
 if [ "$Package" == "" ]; then echo "Package $Package not found"; exit; fi
 if [ "$AutoA" = "" ]; then
-  printf "Restore $ApkTar (Y/N)"
+  printf "Restore $ApkTar for user $User (Y/N) "
   read YesNo
   Answer=$(echo $YesNo | tr '[:lower:]' '[:upper:]')
 else
@@ -37,7 +40,7 @@ fi
 if [ "$Answer" = "Y" ]; then 
   # restore apk                         
   tar -vxzpf $ApkTar -C /               
-  find /data/app/$Package*/ -name base.apk -exec pm install -r {} \;
+  find /data/app/$Package*/ -name base.apk -exec pm install --user $User -r {} \;
 fi
                                                                
 # restore data  
@@ -54,4 +57,3 @@ PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print 
   | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
   | sed 's/_14/_e/g' | sed 's/_15/_f/g')
 chown -R $PUid:$PUid /data/user*/*/$Package
-

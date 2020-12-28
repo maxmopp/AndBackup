@@ -5,22 +5,15 @@
 #	backup misc per User
 #	add incremental, only one copy
 # 20191005 error $iUser instead of ${UserID[iUser]}
-# 20201228 A11 has new random subdir - only backing up base.apk
 #
 # needs files jAndBackupPackage.Ignore and jAndBackup.Exclude
-# tar  from busybox (usually /system/xbin/tar)
-# find from toybox (usually /system/bin/find)
 #
-#   $1 - SaveSet
+#   SaveSet
 #     F Full backup 
 #     I Invremental based on differenz ctime of last backup and mtime of data files
 
 # accounts, bluetooth, wifi access points
 # was fehlt: data usage policy, wallpaper
-
-PATH=/system/xbin:$PATH
-alias find=/system/bin/find
-alias tar=/system/xbin/tar
 
 export LD_LIBRARY_PATH=/vendor/lib*:/system/lib*:/data/jpchil/lib
 export HOME=/data/jpchil/
@@ -54,12 +47,11 @@ for iUser in `seq 0 $UserCount`; do
        ####### apk
        if [ ! -f $BackupDir/$jPackage-apk.tgz ]; then touch -t 197101010101 $BackupDir/$jPackage-apk.tgz; fi
        let TimeDiff=`date '+%s'`-`stat -c %Y $BackupDir/$jPackage-apk.tgz`
-       Result=$(find /data/app/*/*$jPackage*/ -type f -mtime -${TimeDiff}s -name base.apk)
-       AppDir=$(echo $Result | sed 's/\/base.apk//') 
+       Result=$(find /data/app/*$jPackage*/ -type f -mtime -${TimeDiff}s | grep -E -v '\.vdex$|\.art$')
        if [ "$Result" != "" ] || [ "$SaveSet" == "F" ]; then
          if [ $Debug -eq 1 ]; then echo "============ Backing up apk for $jPackage"; fi
          tar -X /data/jpchil/jAndBackup/jAndBackup.Exclude -czf $BackupDir/$jPackage-apk.tgz \
-                -C $AppDir base.apk 2>>$LogFile
+                /data/app/*$jPackage*/ 2>>$LogFile
        fi
        ####### system data
       if [ ! -f $BackupDir/$jPackage-System.tgg ]; then touch -t 197101010101 $BackupDir/$jPackage-System.tgg; fi
@@ -95,6 +87,5 @@ for iUser in `seq 0 $UserCount`; do
           /data/misc_ce/${UserID[iUser]}/wifi 2>>$LogFile | /system/xbin/gpg --batch --yes --encrypt --recipient joerg@jpchil.at -o $BackupDir/misc-User${UserID[iUser]}.tgg
    rm /data/local/tmp/accounts.dmp /data/local/tmp/userdictionary.dmp
 done
-rm /data/local/tmp/base.apk
 
 echo "`date +%Y%m%d-%H%M` - batchBackup finished" >> $LogFile

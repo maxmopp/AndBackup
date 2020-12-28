@@ -1,5 +1,3 @@
-PATH=/system/xbin:$PATH
-
 dd if= bs=4096 | gzip > /storage/C0DE-BA5E/Backups/Partitions/.gz
 dd if=/dev/block/mmcblk0p15 bs=4096 | gzip > /storage/C0DE-BA5E/Backups/Partitions/DDR.gz
 dd if=/dev/block/mmcblk0p19 bs=4096 | gzip > /storage/C0DE-BA5E/Backups/Partitions/aboot.gz

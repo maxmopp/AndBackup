@@ -2,17 +2,9 @@
 #
 # 20190205 /jps - restore jAndBackups
 # 20191005 /jps - 
-# 20201228 A11 has new random subdir, restoring to tmp + pm install, new PUid
 #
 
-PATH=/system/xbin:$PATH
-alias find=/system/bin/find
-alias tar=/system/xbin/tar
-
 BackDir="/sdcard/jAndBackup"
-
-TempDir=/data/local/tmp
-User=0
 
 # install the apks first
 for AppTar in $(find $BackDir -type f -iname "*-apk.tgz"); do
@@ -21,14 +13,15 @@ for AppTar in $(find $BackDir -type f -iname "*-apk.tgz"); do
     echo "Error- unerwartetes Format $AppTar"
   else
     echo "Restoring $Package"
-    tar -xzf $AppTar  -C $TempDir
+    tar -xzf $AppTar -C /
     # find errors when restored to /data/data - macht aber nix bis dato
     # user 10 has to be installed manually
-    pm install --user $User -r $TempDir/base.apk
+    find /data/app/*$Package*/ -name base.apk -exec pm install --user 0 {} \;
   fi
 done
 
 # restore system data
+User=0
 for AppTar in $(find $BackDir -type f -iname "*-System.tgz"); do
   Package=$(echo $AppTar | sed -n 's/.*\/\(.*\)-System.tgz/\1/p')
   if  [ "$Package" == "" ]; then             
@@ -36,39 +29,35 @@ for AppTar in $(find $BackDir -type f -iname "*-System.tgz"); do
   else                       
     echo "Restoring $Package data for System"
     tar -xzf $AppTar -C /                                    
-    PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print $3 }')
-#    # Uid is hex at beginning !?
-#    PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
-#         | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
-#         | sed 's/_14/_e/g' | sed 's/_15/_f/g')
+    # Uid is hex at beginning !?
+    PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
+         | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
+         | sed 's/_14/_e/g' | sed 's/_15/_f/g')
     chown -R $PUid:$PUid /data/data/*$Package*
   fi
 done
 
-# restore user data, only for User0 here
+# restore user data
 for AppTar in $(find $BackDir -type f -iname "*-User*.tgz"); do
   Package=$(echo $AppTar | sed -n 's/.*\/\(.*\)-User.*.tgz/\1/p')
   if  [ "$Package" == "" ]; then             
     echo "Error- unerwartetes Format $AppTar"
   else                       
     User=$(echo $AppTar | sed -n 's/.*-User\(.*\)\.tgz/\1/p')             
-#    if [ $Package = "net.typeblog.shelter" ] && [ $User != 0 ]; then                                                                                                                                                               
-    if [ $User != 0 ]; then                                                                                                                                                               
-      echo "FIXME - Will not restore data for $Package for $User - please use jAndRestoreSingle"
+    if [ $Package = "net.typeblog.shelter" ] && [ $User != 0 ]; then                                                                                                                                                               
+      echo "Will not restore data for $Package for $User"
     else
       echo "Restoring $Package data for User $User"
       tar -xzf $AppTar -C /                                    
-      PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print $3 }')
- #     # Uid is hex at beginning !?
- #     PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
- #        | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
- #        | sed 's/_14/_e/g' | sed 's/_15/_f/g')
-      if [ "$Package" != "misc" ]; then
-          chown -R $PUid:$PUid /data/user*/$User/*$Package*
-      fi
+      # Uid is hex at beginning !?
+      PUid=$(cmd package list packages -U $Package | awk -v User=${User} -F: '{ print "u"User"_"$3 }' \
+         | sed 's/_10/_a/g' | sed 's/_11/_b/g' | sed 's/_12/_c/g' | sed 's/_13/_d/g' \
+         | sed 's/_14/_e/g' | sed 's/_15/_f/g')
+      chown -R $PUid:$PUid /data/user*/$User/*$Package*
     fi
   fi
 done
+
 
 echo "Restore databases"
 Owner=$(stat -c "%U:%G" /data/data/com.android.providers.userdictionary)
